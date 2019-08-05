@@ -53,7 +53,7 @@ spoofedTrainWavList=$wdir/lists/asv2019_"$attackType"_spoofedTrain_wav.lst
 devTestDataType=dev
 evalTestDataType=eval
 
-featureExtractionScript=$wdir/scripts/featureExtraction.sh
+featureExtractionScript=$wdir/scripts/feature_extraction/featureExtraction.sh
 windowSize=400
 
 
@@ -68,8 +68,8 @@ if [ $featName == "lfs" ]; then
 
         ########################## STEP - 1: Feature Extraction #################################################################
         if [ $featExtractFlag == 1 ]; then
-                echo  "bash scripts/lfs_extraction.sh $dirName $featID $attackType"
-                bash scripts/lfs_extraction.sh $dirName $featID $attackType
+                echo  "bash scripts/feature_extraction/lfs_extraction.sh $dirName $featID $attackType"
+                bash scripts/feature_extraction/lfs_extraction.sh $dirName $featID $attackType
         else
                 echo "Feature extraction skipped....! Existing features are used"
         fi
@@ -86,8 +86,8 @@ elif [ $featName == "mfs" ]; then
 	
 	########################## STEP - 1: Feature Extraction #################################################################
 	if [ $featExtractFlag == 1 ]; then
-		echo  "bash scripts/mfs_extraction.sh $dirName $featID $attackType"
-		bash scripts/mfs_extraction.sh $dirName $featID	$attackType
+		echo  "bash scripts/feature_extraction/mfs_extraction.sh $dirName $featID $attackType"
+		bash scripts/feature_extraction/mfs_extraction.sh $dirName $featID	$attackType
 	else
 		echo "Feature extraction skipped....! Existing features are used"
 	fi
@@ -99,24 +99,24 @@ elif [ $featName == "imfs" ]; then
         featName1="imfbe_"$filterCount"Filters_"$featID
         tempFeatName=imfbe
       	if [ $featExtractFlag == 1 ]; then
-               	echo "matlab -nodesktop -nosplash -r \"cd scripts/ ; inverseMelFilterBanks_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$filterCount"Filters_"$featID"'); exit;\""
-                matlab -nodesktop -nosplash -r "cd scripts/ ; inverseMelFilterBanks_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$filterCount"Filters_"$featID"'); exit;"
-#              	echo "matlab -nodesktop -nosplash -r \"cd scripts/ ; inverseMelFilterBanks_evalData('../$evalTestWavList','$tempFeatName','"$filterCount"Filters_"$featID"'); exit;\""
-#               matlab -nodesktop -nosplash -r "cd scripts/ ; inverseMelFilterBanks_devData('../$evalTestWavList','$tempFeatName','"$filterCount"Filters_"$featID"'); exit;"
+               	echo "matlab -nodesktop -nosplash -r \"cd scripts/feature_extraction/ ; inverseMelFilterBanks_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$filterCount"Filters_"$featID"'); exit;\""
+                matlab -nodesktop -nosplash -r "cd scripts/feature_extraction/ ; inverseMelFilterBanks_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$filterCount"Filters_"$featID"'); exit;"
+#              	echo "matlab -nodesktop -nosplash -r \"cd scripts/feature_extraction/ ; inverseMelFilterBanks_evalData('../$evalTestWavList','$tempFeatName','"$filterCount"Filters_"$featID"'); exit;\""
+#               matlab -nodesktop -nosplash -r "cd scripts/feature_extraction/ ; inverseMelFilterBanks_devData('../$evalTestWavList','$tempFeatName','"$filterCount"Filters_"$featID"'); exit;"
                 echo "FilterBank Log energies calcuated...! \n calculating frame slope now..."
-                find scripts/IMFBE_"$filterCount"Filters_"$featID"/train/bonafide/ -type f | sort -u > lists/matlab.imfbe.S.genuineFeats.lst
-                find scripts/IMFBE_"$filterCount"Filters_"$featID"/train/spoofed/ -type f | sort -u > lists/matlab.imfbe.S.replayedFeats.lst
-                find scripts/IMFBE_"$filterCount"Filters_"$featID"/dev/ -type f | sort -u > lists/matlab.imfbe.S.devTestFeats.lst
-#                find scripts/IMFBE_"$filterCount"Filters_"$featID"/eval/ -type f | sort -u > lists/matlab.imfbe.S.evalTestFeats.lst
-                echo "bash scripts/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.genuineFeats.lst imfs train genuine $genuineTrainWavList 0 $featID $filterCount $attackType"
-                bash scripts/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.genuineFeats.lst imfs train genuine $genuineTrainWavList 0 $featID $filterCount $attackType
-                echo "bash scripts/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.replayedFeats.lst imfs train spoofed $spoofedTrainWavList 0 $featID $filterCount $attackType"
-                bash scripts/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.replayedFeats.lst imfs train spoofed $spoofedTrainWavList 0 $featID $filterCount $attackType
-                echo "bash scripts/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.devTestFeats.lst imfs dev unknown $devTestWavList 0 $featID $filterCount $attackType"
-                bash scripts/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.devTestFeats.lst imfs dev unknown $devTestWavList 0 $featID $filterCount $attackType
-#                echo "bash scripts/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.evalTestFeats.lst imfs eval $evalTestWavList 0 $featID $filterCount $attackType"
-#                bash scripts/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.evalTestFeats.lst imfs eval unknown $evalTestWavList 0 $featID $filterCount $attackType
-#		mv scripts/IMFBE_"$cepstrumCount"_"$featID"/eval $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"
+                find scripts/feature_extraction/IMFBE_"$filterCount"Filters_"$featID"/train/bonafide/ -type f | sort -u > lists/matlab.imfbe.S.genuineFeats.lst
+                find scripts/feature_extraction/IMFBE_"$filterCount"Filters_"$featID"/train/spoofed/ -type f | sort -u > lists/matlab.imfbe.S.replayedFeats.lst
+                find scripts/feature_extraction/IMFBE_"$filterCount"Filters_"$featID"/dev/ -type f | sort -u > lists/matlab.imfbe.S.devTestFeats.lst
+#                find scripts/feature_extraction/IMFBE_"$filterCount"Filters_"$featID"/eval/ -type f | sort -u > lists/matlab.imfbe.S.evalTestFeats.lst
+                echo "bash scripts/feature_extraction/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.genuineFeats.lst imfs train genuine $genuineTrainWavList 0 $featID $filterCount $attackType"
+                bash scripts/feature_extraction/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.genuineFeats.lst imfs train genuine $genuineTrainWavList 0 $featID $filterCount $attackType
+                echo "bash scripts/feature_extraction/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.replayedFeats.lst imfs train spoofed $spoofedTrainWavList 0 $featID $filterCount $attackType"
+                bash scripts/feature_extraction/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.replayedFeats.lst imfs train spoofed $spoofedTrainWavList 0 $featID $filterCount $attackType
+                echo "bash scripts/feature_extraction/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.devTestFeats.lst imfs dev unknown $devTestWavList 0 $featID $filterCount $attackType"
+                bash scripts/feature_extraction/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.devTestFeats.lst imfs dev unknown $devTestWavList 0 $featID $filterCount $attackType
+#                echo "bash scripts/feature_extraction/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.evalTestFeats.lst imfs eval $evalTestWavList 0 $featID $filterCount $attackType"
+#                bash scripts/feature_extraction/calculateSlopeFromFilterBankEnergies.sh lists/matlab.imfbe.S.evalTestFeats.lst imfs eval unknown $evalTestWavList 0 $featID $filterCount $attackType
+#		mv scripts/feature_extraction/IMFBE_"$cepstrumCount"_"$featID"/eval $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"
         else
                 echo "Feature extraction skipped....! Existing features are used"
         fi
@@ -127,10 +127,10 @@ elif [ $featName == "imfcc" ]; then
         featName1="imfcc_"$cepstrumCount"_"$featID
         tempFeatName=imfcc
         if [ $featExtractFlag == 1 ]; then
-        	echo "matlab -nodesktop -nosplash -r \"cd scripts/ ; imfcc_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
-                matlab -nodesktop -nosplash -r "cd scripts/ ; imfcc_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
-                #echo "matlab -nodesktop -nosplash -r \"cd scripts/ ; imfcc_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
-                #matlab -nodesktop -nosplash -r "cd scripts/ ; imfcc_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
+        	echo "matlab -nodesktop -nosplash -r \"cd scripts/feature_extraction/ ; imfcc_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
+                matlab -nodesktop -nosplash -r "cd scripts/feature_extraction/ ; imfcc_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
+                #echo "matlab -nodesktop -nosplash -r \"cd scripts/feature_extraction/ ; imfcc_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
+                #matlab -nodesktop -nosplash -r "cd scripts/feature_extraction/ ; imfcc_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
                 echo "IMFCC Features are extracted..."
         else
                 echo "Feature extraction skipped....! Existing features are used"
@@ -138,8 +138,8 @@ elif [ $featName == "imfcc" ]; then
 	dirName="$featName"_"$cepstrumCount"_"$featID"
 	mkdir $wdir/features/"$featName"_"$cepstrumCount"_"$featID"
 	mkdir $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/$attackType
-	echo "mv scripts/IMFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/"$attackType/
-	mv scripts/IMFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
+	echo "mv scripts/feature_extraction/IMFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/"$attackType/
+	mv scripts/feature_extraction/IMFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
 
 elif [ $featName == "lfbe" ]; then
         echo "featName: $featName ; featID: $featID"
@@ -148,10 +148,10 @@ elif [ $featName == "lfbe" ]; then
         featName1="lfbe_"$filterCount"Filters_"$featID
         tempFeatName=lfbe
         if [ $featExtractFlag == 1 ]; then
-                echo "matlab -nodesktop -nosplash -r \"cd scripts/ ; lfbe_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
-                #matlab -nodesktop -nosplash -r "cd scripts/ ; lfbe_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
-                #echo "matlab -nodesktop -nosplash -r \"cd scripts/ ; lfbe_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
-                #matlab -nodesktop -nosplash -r "cd scripts/ ; lfbe_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
+                echo "matlab -nodesktop -nosplash -r \"cd scripts/feature_extraction/ ; lfbe_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
+                #matlab -nodesktop -nosplash -r "cd scripts/feature_extraction/ ; lfbe_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
+                #echo "matlab -nodesktop -nosplash -r \"cd scripts/feature_extraction/ ; lfbe_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
+                #matlab -nodesktop -nosplash -r "cd scripts/feature_extraction/ ; lfbe_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
                 echo "LFBE Features are extracted..."
         else
                 echo "Feature extraction skipped....! Existing features are used"
@@ -159,8 +159,8 @@ elif [ $featName == "lfbe" ]; then
         dirName="$featName"_"$cepstrumCount"_"$featID"
         mkdir $wdir/features/"$featName"_"$cepstrumCount"_"$featID"
         mkdir $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/$attackType
-        echo "mv scripts/LFBE_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/"$attackType/
-        mv scripts/LFBE_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
+        echo "mv scripts/feature_extraction/LFBE_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/"$attackType/
+        mv scripts/feature_extraction/LFBE_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
 
 elif [ $featName == "lfcc" ]; then
         echo "featName: $featName ; featID: $featID"
@@ -168,10 +168,10 @@ elif [ $featName == "lfcc" ]; then
         featName1="lfcc_"$cepstrumCount"_"$featID
         tempFeatName=lfcc
         if [ $featExtractFlag == 1 ]; then
-                echo "matlab -nodesktop -nosplash -r \"cd scripts/ ; lfcc_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
-                matlab -nodesktop -nosplash -r "cd scripts/ ; lfcc_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
-                #echo "matlab -nodesktop -nosplash -r \"cd scripts/ ; lfcc_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
-                #matlab -nodesktop -nosplash -r "cd scripts/ ; lfcc_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
+                echo "matlab -nodesktop -nosplash -r \"cd scripts/feature_extraction/ ; lfcc_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
+                matlab -nodesktop -nosplash -r "cd scripts/feature_extraction/ ; lfcc_devData('../$genuineTrainWavList','../$spoofedTrainWavList','../$devTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
+                #echo "matlab -nodesktop -nosplash -r \"cd scripts/feature_extraction/ ; lfcc_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;\""
+                #matlab -nodesktop -nosplash -r "cd scripts/feature_extraction/ ; lfcc_evalData('../$evalTestWavList','$tempFeatName','"$cepstrumCount"_"$featID"','$filterCount'); exit;"
                 echo "LFCC Features are extracted..."
         else
                 echo "Feature extraction skipped....! Existing features are used"
@@ -179,12 +179,12 @@ elif [ $featName == "lfcc" ]; then
         dirName="$featName"_"$cepstrumCount"_"$featID"
         mkdir $wdir/features/"$featName"_"$cepstrumCount"_"$featID"
         mkdir $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/$attackType
-        echo "mv scripts/LFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/"$attackType/
-        mv scripts/LFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
+        echo "mv scripts/feature_extraction/LFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/"$attackType/
+        mv scripts/feature_extraction/LFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
 
 else
         filterCount=40
-        featureExtractionScript=$wdir/scripts/featureExtraction.sh
+        featureExtractionScript=$wdir/scripts/feature_extraction/featureExtraction.sh
         configFile=$wdir/conf/fe-ctrl.base
         sed 's!cepstrumCount!'$cepstrumCount'!' $wdir/conf/fe-ctrl.base.template.$featName > temp.confFile
         sed 's!filterCount!'$filterCount'!' temp.confFile > temp1.confFile
