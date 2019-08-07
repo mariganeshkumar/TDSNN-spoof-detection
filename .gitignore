@@ -1,0 +1,11 @@
+*.lst
+features/*
+modelDir*
+*header*
+*tmp*
+*temp*
+*__pycache__*
+*scoreFile*
+*resultFile*
+trainAlone.*
+output.*
