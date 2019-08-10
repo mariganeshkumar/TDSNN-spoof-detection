@@ -9,9 +9,9 @@ test_only = int(sys.argv[2])
 seed_value= int(sys.argv[3])
 outputFileName = sys.argv[4]
 trainList = sys.argv[5]
-validationList = sys.argv[6]
-testList = sys.argv[7]
-
+trainValidationList = sys.argv[6]
+devList = sys.argv[7]
+evalList = sys.argv[8]
 
 tf.set_random_seed(seed_value)
 
@@ -32,55 +32,7 @@ session_conf.gpu_options.allow_growth = True
 sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
 K.set_session(sess)
 
-########## 4. Prepare datalist from the pre-processes list of files ############
-from tqdm import tqdm
-#from math import min
 
-tFN_ID=open(trainList,'r')
-trainLines=tFN_ID.read().split("\n")[:-1]
-trainFileNames=[x for x in trainLines]
-
-dFN_ID=open(validationList,'r');
-devLines=dFN_ID.read().split("\n")[:-1]
-devFileNames=[y for y in devLines]
-
-eFN_ID=open(testList,'r');
-evalLines=eFN_ID.read().split("\n")[:-1]
-evalFileNames=[z for z in evalLines]
-
-devData=[]
-devLabel=[]
-devFileCount=len(devFileNames);
-for i in tqdm(range(devFileCount)):
-	curFile=np.genfromtxt(devFileNames[i],skip_header=1,delimiter=' ',dtype='float')
-	devData.append(curFile)
-	flag=str(devFileNames[i].split('/')[-2])
-	if "spoofed" in flag: ## 761 to 1710 spoofed
-		tmp=str(devFileNames[i])+str(" spoofed ")+str(flag)
-#		print(tmp)
-		devLabel.append(0)
-	else: ### 1 to 760 is bonafide
-		tmp=str(devFileNames[i])+str(" bonafide ")+str(flag)
-#		print(tmp)
-		devLabel.append(1)
-
-trainData=[]
-trainLabel=[]
-trainFileCount=len(trainFileNames);
-for i in tqdm(range(trainFileCount)):
-	curFile=np.genfromtxt(trainFileNames[i],skip_header=1,delimiter=' ',dtype='float')
-	trainData.append(curFile)
-	flag=str(trainFileNames[i].split('/')[-2])
-#	print(flag)
-	if "spoofed" in flag:
-#		tmp=str(trainFileNames[i])+str(" spoofed ")
-#		print(tmp)
-		trainLabel.append(0)
-	else:
-#		tmp=str(trainFileNames[i])+str(" bonafide ")
-#		print(tmp)
-		trainLabel.append(1)
-	
 
 ############### 6. Configure a new global `tensorflow` session ##############
 import os
@@ -106,17 +58,6 @@ xvecDim=int(outputFileName.split("_")[5].split(".")[0])
 print (hLayer1,hLayer2,xvecDim)
 hiddenLayerConfig = [hLayer1,hLayer2,xvecDim]
 
-trainLabel = np.asarray(trainLabel)
-devLabel = np.asarray(devLabel)
-#evalLabel = np.asarray(evalLabel)
-
-no_of_examples = trainLabel.shape[0]
-
-trainLabel = to_categorical(np.squeeze(trainLabel), num_classes=2)
-devLabel =  to_categorical(np.squeeze(devLabel), num_classes=2)
-print(trainLabel)
-#print(devLabel)
-#evalLabel =  to_categorical(np.squeeze(evalLabel), num_classes=trainLabel.shape[1])
 
 if test_only == 0:
 	if os.path.exists(save_dir):
@@ -127,26 +68,7 @@ if test_only == 0:
 early_stopping = EarlyStopping(patience=10, verbose=1)
 model_checkpoint = ModelCheckpoint(save_dir+"/keras.model", save_best_only=True, verbose=1)
 reduce_lr = ReduceLROnPlateau(factor=0.5, patience=3, min_lr=0.00000000001, verbose=1)
-numFeats=trainData[0].shape[1]
 
-maxLen=0
-devDataLength=len(devData)
-for i in tqdm(range(devDataLength)):
-	maxLen=max([maxLen,devData[i].shape[0]])
-print(maxLen)
-batchDevData=np.zeros([devDataLength,maxLen,numFeats])
-batchDevLabel=np.zeros([devDataLength,2]) ## 2 represents the number of classes
-for i in tqdm(range(devDataLength)):
-	exampleLen=devData[i].shape[0]
-	reps=ceil(maxLen/exampleLen); 
-	repData = np.tile(devData[i],[reps, 1])
-	batchDevData[i,:,:]=repData[:maxLen,:]
-	batchDevLabel[i,:]=devLabel[i,:]
-		
-print(batchDevData.shape, batchDevLabel.shape)
-
-miniBatchSize=16
-numFeats=trainData[0].shape[1]
 
 def trainData_generator():
 	startIndex=0
@@ -244,33 +166,121 @@ def categorical_focal_loss_fixed(y_true, y_pred):
 get_custom_objects().update({"mixed_loss": mixed_mse_cross_entropy_loss})
 get_custom_objects().update({"focal_loss": categorical_focal_loss_fixed})
 
-model = get_x_vector_model(batchDevData, batchDevLabel, hiddenLayerConfig)
-adam_opt = Adam(lr=0.001, clipvalue=1)
-#model.compile(loss=losses.categorical_crossentropy, optimizer=adam_opt,
-model.compile(loss="focal_loss", optimizer=adam_opt,
-			  metrics=['accuracy', top_k_categorical_accuracy])
-model.summary()
+
+########## 4. Prepare datalist from the pre-processes list of files ############
+from tqdm import tqdm
+
+
+tFN_ID=open(trainList,'r')
+trainLines=tFN_ID.read().split("\n")[:-1]
+trainFileNames=[x for x in trainLines]
+
+tvFN_ID=open(trainValidationList,'r');
+trianValLines=tvFN_ID.read().split("\n")[:-1]
+trianValFileNames=[y for y in trianValLines]
+
+dFN_ID=open(devList,'r');
+devLines=dFN_ID.read().split("\n")[:-1]
+devFileNames=[z for z in devLines]
+
+eFN_ID=open(evalList,'r');
+evalLines=eFN_ID.read().split("\n")[:-1]
+evalFileNames=[v for v in evalLines]
 
 if test_only == 0 :
+
+	trianValData=[]
+	trianValLabel=[]
+	trianValFileCount=len(trianValFileNames);
+	for i in tqdm(range(trianValFileCount)):
+		curFile=np.genfromtxt(trianValFileNames[i],skip_header=1,delimiter=' ',dtype='float')
+		trianValData.append(curFile)
+		flag=str(trianValFileNames[i].split('/')[-2])
+		if "spoofed" in flag: ## 761 to 1710 spoofed
+			tmp=str(trianValFileNames[i])+str(" spoofed ")+str(flag)
+	#		print(tmp)
+			trianValLabel.append(0)
+		else: ### 1 to 760 is bonafide
+			tmp=str(trianValFileNames[i])+str(" bonafide ")+str(flag)
+	#		print(tmp)
+			trianValLabel.append(1)
+
+	trainData=[]
+	trainLabel=[]
+	trainFileCount=len(trainFileNames);
+	for i in tqdm(range(trainFileCount)):
+		curFile=np.genfromtxt(trainFileNames[i],skip_header=1,delimiter=' ',dtype='float')
+		trainData.append(curFile)
+		flag=str(trainFileNames[i].split('/')[-2])
+	#	print(flag)
+		if "spoofed" in flag:
+	#		tmp=str(trainFileNames[i])+str(" spoofed ")
+	#		print(tmp)
+			trainLabel.append(0)
+		else:
+	#		tmp=str(trainFileNames[i])+str(" bonafide ")
+	#		print(tmp)
+			trainLabel.append(1)
+		
+
+	trainLabel = np.asarray(trainLabel)
+	trianValLabel = np.asarray(trianValLabel)
+	no_of_examples = trainLabel.shape[0]
+
+	trainLabel = to_categorical(np.squeeze(trainLabel), num_classes=2)
+	trianValLabel =  to_categorical(np.squeeze(trianValLabel), num_classes=2)
+	numFeats=trainData[0].shape[1]
+
+	maxLen=0
+	trianValDataLength=len(trianValData)
+	for i in tqdm(range(trianValDataLength)):
+		maxLen=max([maxLen,trianValData[i].shape[0]])
+	print(maxLen)
+	batchtrianValData=np.zeros([trianValDataLength,maxLen,numFeats])
+	batchtrianValLabel=np.zeros([trianValDataLength,2]) ## 2 represents the number of classes
+	for i in tqdm(range(trianValDataLength)):
+		exampleLen=trianValData[i].shape[0]
+		reps=ceil(maxLen/exampleLen); 
+		repData = np.tile(trianValData[i],[reps, 1])
+		batchtrianValData[i,:,:]=repData[:maxLen,:]
+		batchtrianValLabel[i,:]=trianValLabel[i,:]
+			
+
+	miniBatchSize=16
+	numFeats=trainData[0].shape[1]
+
+
+
+	model = get_x_vector_model(batchtrianValData, hiddenLayerConfig, train_label=batchtrianValLabel, forTesting=False)
+	adam_opt = Adam(lr=0.001, clipvalue=1)
+	#model.compile(loss=losses.categorical_crossentropy, optimizer=adam_opt,
+	model.compile(loss="focal_loss", optimizer=adam_opt,
+				  metrics=['accuracy', top_k_categorical_accuracy])
+	model.summary()
+
 	early_stopping = EarlyStopping(patience=10, verbose=1)
 	model_checkpoint = ModelCheckpoint(save_dir+'/keras.model', save_best_only=True, verbose=1)
 	reduce_lr = ReduceLROnPlateau(factor=0.5, patience=3, min_lr=0.00000000001, verbose=1)
 
 	#Fit the model
-	model.fit_generator(trainData_generator(), validation_data=(batchDevData, batchDevLabel), epochs=3000, steps_per_epoch=188, verbose=2,
+	model.fit_generator(trainData_generator(), validation_data=(batchtrianValData, batchtrianValLabel), epochs=3000, steps_per_epoch=188, verbose=2,
 		  callbacks=[early_stopping, model_checkpoint, reduce_lr])
 	model.load_weights(save_dir+'/keras.model')
 else:
-	model.load_weights(save_dir+'/keras.model')
+	curFile=np.genfromtxt(evalFileNames[0],skip_header=1,delimiter=' ',dtype='float')
+	curFile=np.expand_dims(curFile,axis=0)
+	model = get_x_vector_model(curFile, hiddenLayerConfig)
+	model.summary()
+	model.load_weights(save_dir+'/keras.model', by_name=True)
 
 devData=[]
 devLabel=[]
 devFileCount=len(devFileNames);
-devOut=open("trainVal_"+outputFileName,'w')
+devOut=open("dev_"+outputFileName,'w')
 for i in tqdm(range(devFileCount)):
-	curDevFile=np.genfromtxt(devFileNames[i],skip_header=1,delimiter=' ',dtype='float')
-	curDevFile=np.expand_dims(curDevFile,axis=0)
-	devScore=model.predict(curDevFile)
+	curdevFile=np.genfromtxt(devFileNames[i],skip_header=1,delimiter=' ',dtype='float')
+	curdevFile=np.expand_dims(curdevFile,axis=0)
+	devScore=model.predict(curdevFile)
 	devScore=devScore[0,1]-devScore[0,0]
 	#print(devScore.shape)
 	if devScore >= 0:
@@ -282,7 +292,7 @@ for i in tqdm(range(devFileCount)):
 evalData=[]
 evalLabel=[]
 evalFileCount=len(evalFileNames);
-fOut=open(outputFileName,'w')
+fOut=open("eval_"+outputFileName,'w')
 for i in tqdm(range(evalFileCount)):
 	curFile=np.genfromtxt(evalFileNames[i],skip_header=1,delimiter=' ',dtype='float')
 	curFile=np.expand_dims(curFile,axis=0)

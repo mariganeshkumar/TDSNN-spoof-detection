@@ -16,6 +16,7 @@ if [ $# != 11 ]; then
 fi
 
 wdir=.
+databasePath=data/ASVspoof2019_root/
 featName=$1
 cepstrumCount=$2
 deltaFlag=$3
@@ -27,6 +28,8 @@ hLayer2=$8
 xvectorDim=$9
 testNNFlag=${10}
 attackType=${11}
+
+
 
 if [ $deltaDeltaFlag == 1 ] && [ $deltaFlag == 1 ] && [ $logEnergyFlag == 1 ]; then
 	featID=ZSDA
@@ -55,6 +58,11 @@ evalTestDataType=eval
 
 featureExtractionScript=$wdir/scripts/feature_extraction/featureExtraction.sh
 windowSize=400
+
+
+
+featDir=$wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
+
 
 
 if [ $featName == "lfs" ]; then
@@ -139,7 +147,7 @@ elif [ $featName == "imfcc" ]; then
 	mkdir -p $wdir/features/"$featName"_"$cepstrumCount"_"$featID"
 	mkdir -p $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/$attackType
 	echo "mv scripts/feature_extraction/IMFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/"$attackType/
-	mv scripts/feature_extraction/IMFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
+	mv scripts/feature_extraction/IMFCC_"$cepstrumCount"_"$featID"/* $featDir
 
 elif [ $featName == "lfbe" ]; then
         echo "featName: $featName ; featID: $featID"
@@ -160,7 +168,7 @@ elif [ $featName == "lfbe" ]; then
         mkdir -p $wdir/features/"$featName"_"$cepstrumCount"_"$featID"
         mkdir -p $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/$attackType
         echo "mv scripts/feature_extraction/LFBE_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/"$attackType/
-        mv scripts/feature_extraction/LFBE_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
+        mv scripts/feature_extraction/LFBE_"$cepstrumCount"_"$featID"/* $featDir
 
 elif [ $featName == "lfcc" ]; then
         echo "featName: $featName ; featID: $featID"
@@ -185,7 +193,7 @@ elif [ $featName == "lfcc" ]; then
         mkdir -p $wdir/features/"$featName"_"$cepstrumCount"_"$featID"
         mkdir -p $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/$attackType
         echo "mv scripts/feature_extraction/LFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID"/"$attackType/
-        mv scripts/feature_extraction/LFCC_"$cepstrumCount"_"$featID"/* $wdir/features/"$featName"_"$cepstrumCount"_"$featID/"$attackType/
+        mv scripts/feature_extraction/LFCC_"$cepstrumCount"_"$featID"/* $featDir
 
 else
         filterCount=40
@@ -288,41 +296,77 @@ less trainVal_gen_"$featName"_"$attackType".lst trainVal_spf_"$featName"_"$attac
 
 wc -l trainVal_gen_"$featName"_"$attackType".lst trainVal_spf_"$featName"_"$attackType".lst trainAlone.$featName.txt trainVal_"$featName"_header.txt
 
+
+devWavFilePath=$databasePath$attackType/ASVspoof2019_"$attackType"_dev/wav
+echo $databasePath/$attackType/ASVspoof2019_"$attackType"_dev/wav
 cp $devTestWavList dev_"$featName"_header.txt
 #sed -i 's!data/ASV_spoof_2019/'$attackType'/ASVspoof2019_'$attackType'_dev/wav/!features/imfs_70Filters_S/'$attackType'/dev/'! dev_"$featName"_header.txt
 #sed -i 's!data/ASV_spoof_2019/'$attackType'/ASVspoof2019_'$attackType'_dev/wav/!features/'$dirName'/'$attackType'/dev/'! dev_"$featName"_header.txt
-#sed -i 's!\.wav!\.'$featName'!' dev_"$featName"_header.txt
-#sed -i 's!spoof/!spoofed/!' dev_"$featName"_header.txt
+sed -i 's!\.wav!\.'$featName'!' dev_"$featName"_header.txt
+sed -i 's!'$devWavFilePath'!'$featDir'/dev/!' dev_"$featName"_header.txt
+echo sed -i 's!'$devWavFilePath'!'$featDir'/dev/!' dev_"$featName"_header.txt
 #sed -i 's!spoofed/!/!' dev_"$featName"_header.txt
 #sed -i 's!bonafide/!/!' dev_"$featName"_header.txt
 
-
-#echo "ls -v $evalTestFeatPath/* > eval_"$featName"_header.txt"
-#ls -v $evalTestFeatPath/* > eval_"$featName"_header.txt
+evalWavFilePath=$databasePath$attackType/ASVspoof2019_"$attackType"_eval/wav
 cp $evalTestWavList eval_"$featName"_header.txt
+sed -i 's!\.wav!\.'$featName'!' eval_"$featName"_header.txt
+sed -i 's!'$evalWavFilePath'!'$featDir'/eval/!' eval_"$featName"_header.txt
 
 export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64
 #echo "python3 scripts/xvectors_naive_asv2019_LA_devData.py modelDir_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim $testNNFlag 0 resultFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt train_"$featName"_header.txt trainVal_"$featName"_header.txt dev_"$featName"_header.txt"
 #python3 scripts/xvectors_naive_asv2019_LA_devData.py modelDir_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim $testNNFlag 0 resultFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt train_"$featName"_header.txt trainVal_"$featName"_header.txt dev_"$featName"_header.txt
-echo "python3 scripts/xvectors_naive_asv2019_LA_devData_equal_batch.py modelDir_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim $testNNFlag 0 resultFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt train_"$featName"_header.txt trainVal_"$featName"_header.txt dev_"$featName"_header.txt"
-python3 scripts/xvectors_naive_asv2019_LA_devData_equal_batch.py modelDir_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim $testNNFlag 0 resultFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt train_"$featName"_header.txt trainVal_"$featName"_header.txt dev_"$featName"_header.txt
+echo "python3 scripts/xvectors_naive_asv2019_LA_devData_equal_batch.py modelDir_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim $testNNFlag 0 resultFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt train_"$featName"_header.txt trainVal_"$featName"_header.txt dev_"$featName"_header.txt" eval_"$featName"_header.txt
+python3 scripts/xvectors_naive_asv2019_LA_devData_equal_batch.py modelDir_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim $testNNFlag 0 resultFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt train_"$featName"_header.txt trainVal_"$featName"_header.txt dev_"$featName"_header.txt eval_"$featName"_header.txt
 export LD_PRELOAD=""
 export LD_LIBRARY_PATH=""
 
-################################## STEP - 3: Calculate EER ##################################################
+################################## STEP - 3: Calculate Dev EER ##################################################
 
-resultFile=resultFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt
-cmGroundTruth=data/ASV_spoof_2019/"$attackType"/ASVspoof2019_"$attackType"_protocols/ASVspoof2019."$attackType".cm.dev.trl.txt
-asvScoreFile=data/ASV_spoof_2019/"$attackType"/ASVspoof2019_"$attackType"_dev_asv_scores_v1.txt
-
+resultFile=dev_resultFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt
+cmGroundTruth=data/ASVspoof2019_root/"$attackType"/ASVspoof2019_"$attackType"_cm_protocols/ASVspoof2019."$attackType".cm.dev.trl.txt
+asvScoreFile=data/ASVspoof2019_root/"$attackType"/ASVspoof2019_"$attackType"_asv_scores/ASVspoof2019."$attackType".asv.dev.gi.trl.scores.txt
+echo $mGroundTruth
 ###LA_D_9967770 spoof -0.67486644 LA_0078 LA_D_9967770 - VC_4 spoof
 cmScoreFile=scoreFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt
+echo paste -d ' ' $resultFile $cmGroundTruth | awk '{if($1==$5) print $1" "$7" "$8" "$3}' > $cmScoreFile
+
 paste -d ' ' $resultFile $cmGroundTruth | awk '{if($1==$5) print $1" "$7" "$8" "$3}' > $cmScoreFile
 
 rm output.$featName.txt
-echo "matlab -nodesktop -nosplash -r \"cd ASVspoof_2019_baseline_CM_v1/tDCF_v1/ ; evaluate_tDCF_asvspoof19('../../$cmScoreFile','../../$asvScoreFile'); exit;\""
-matlab -nodesktop -nosplash -r "cd ASVspoof_2019_baseline_CM_v1/tDCF_v1/ ; evaluate_tDCF_asvspoof19('../../$cmScoreFile','../../$asvScoreFile'); exit;" >> output.$featName.txt
+echo "matlab -nodesktop -nosplash -r \"cd library/evaluvation/tDCF_v1/ ; evaluate_tDCF_asvspoof19('../../../$cmScoreFile','../../../$asvScoreFile'); exit;\""
+matlab -nodesktop -nosplash -r "cd library/evaluvation/tDCF_v1/ ; evaluate_tDCF_asvspoof19('../../../$cmScoreFile','../../../$asvScoreFile'); exit;" >> output.$featName.txt
+tDCF=`less output.$featName.txt | grep "min-tDCF" | cut -d '=' -f2`
+spkrEER=`less output.$featName.txt | grep "EER" | head -1 | cut -d '=' -f2 | cut -d '%' -f1`
+spfEER=`less output.$featName.txt | grep "EER" | tail -1 | cut -d '=' -f2 | cut -d '%' -f1`
+echo ""
+
+### LA_D_9935163 spoof -0.49706092 LA_0078 LA_D_9935163 - VC_4 spoof
+paste -d ' ' $resultFile $cmGroundTruth > tmp1.$featName
+#awk '{if($4>=0.0) {print $0" bonafide"} else {print $0" spoof"}}' tmp1 > tmp2
+trialCount=`less $cmGroundTruth | wc -l`
+acc=`awk -F' ' -v hits=0 -v miss=0 -v trialCount=$trialCount '{if($1==$5 && $2==$8) {hits=hits+1} else {miss=miss+1}} END {print "hits="hits" ; miss="miss" ; acc=" (hits/trialCount)*100}' tmp1.$featName`
+echo "HL1:$hLayer1 HL2:$hLayer2 xVecDim:$xvectorDim feat:$featName featID:"$cepstrumCount"$featID ========> spkrEER: $spkrEER ; spfEER: $spfEER ; t-DCF=$tDCF ; Acc: $acc" 
+echo "HL1:$hLayer1 HL2:$hLayer2 xVecDim:$xvectorDim feat:$featName featID:"$cepstrumCount"$featID ========> spkrEER: $spkrEER ; spfEER: $spfEER ; t-DCF=$tDCF ; Acc: $acc" >> $featName.resultFile.30Mar19.txt
+echo ""
+
+
+################################## STEP - 3: Calculate Eval EER ##################################################
+
+resultFile=eval_resultFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt
+cmGroundTruth=data/ASVspoof2019_root/"$attackType"/ASVspoof2019_"$attackType"_cm_protocols/ASVspoof2019."$attackType".cm.eval.trl.txt
+asvScoreFile=data/ASVspoof2019_root/"$attackType"/ASVspoof2019_"$attackType"_asv_scores/ASVspoof2019."$attackType".asv.eval.gi.trl.scores.txt
+echo $mGroundTruth
+###LA_D_9967770 spoof -0.67486644 LA_0078 LA_D_9967770 - VC_4 spoof
+cmScoreFile=scoreFile_"$featName"_"$attackType"_$hLayer1"_"$hLayer2"_"$xvectorDim.txt
+echo paste -d ' ' $resultFile $cmGroundTruth | awk '{if($1==$5) print $1" "$7" "$8" "$3}' > $cmScoreFile
+
+paste -d ' ' $resultFile $cmGroundTruth | awk '{if($1==$5) print $1" "$7" "$8" "$3}' > $cmScoreFile
+
+rm output.$featName.txt
+echo "matlab -nodesktop -nosplash -r \"cd library/evaluvation/tDCF_v1/ ; evaluate_tDCF_asvspoof19('../../../$cmScoreFile','../../../$asvScoreFile'); exit;\""
+matlab -nodesktop -nosplash -r "cd library/evaluvation/tDCF_v1/ ; evaluate_tDCF_asvspoof19('../../../$cmScoreFile','../../../$asvScoreFile'); exit;" >> output.$featName.txt
 tDCF=`less output.$featName.txt | grep "min-tDCF" | cut -d '=' -f2`
 spkrEER=`less output.$featName.txt | grep "EER" | head -1 | cut -d '=' -f2 | cut -d '%' -f1`
 spfEER=`less output.$featName.txt | grep "EER" | tail -1 | cut -d '=' -f2 | cut -d '%' -f1`

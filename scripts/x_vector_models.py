@@ -7,7 +7,7 @@ import keras.backend as K
 
 import tensorflow as tf
 
-def get_modified_x_vector_model(train_data, train_label, num_channels, hiddenLayerConfig, forTesting = False):
+def get_modified_x_vector_model(train_data, num_channels, hiddenLayerConfig, train_label = None,  forTesting = True):
     inputs = keras.Input(shape=(train_data.shape[1], None, train_data.shape[-1]))
     def split_channels(x):
         channel_data = tf.split(x, num_channels, axis=1)
@@ -35,14 +35,14 @@ def get_modified_x_vector_model(train_data, train_label, num_channels, hiddenLay
     vv = Concatenate()(vars)
     k1 = Concatenate()([mv, vv])
     d1 = Dense(int(hiddenLayerConfig[2]), activation='sigmoid', name='x_vector')(k1)
-    output = Dense(train_label.shape[1], activation='softmax', name='dense_' + str(train_label.shape[1]))(d1)
     if forTesting:
         model = keras.Model(inputs=inputs, outputs=d1)
     else:
+        output = Dense(train_label.shape[1], activation='softmax', name='dense_' + str(train_label.shape[1]))(d1)
         model = keras.Model(inputs=inputs, outputs=output)
     return model
 
-def get_x_vector_model(train_data, train_label, hiddenLayerConfig, forTesting = False):
+def get_x_vector_model(train_data, hiddenLayerConfig, train_label = None,  forTesting = True):
     inputs = keras.Input(shape=(None, train_data.shape[-1],))
     t1 = TDNN(int(hiddenLayerConfig[0]), (-1,0,+1), padding='same', activation="sigmoid", name="TDNN1")(inputs)
     t2 = TDNN(int(hiddenLayerConfig[1]), input_context=(0,), padding='same', activation="sigmoid", name="TDNN2")(t1)
@@ -52,10 +52,10 @@ def get_x_vector_model(train_data, train_label, hiddenLayerConfig, forTesting = 
     m1 = average(t2)
     k1 = keras.layers.Concatenate()([m1, v1])
     d1 = Dense(int(hiddenLayerConfig[2]), activation='sigmoid', name='x_vector')(k1)
-    output = Dense(train_label.shape[1], activation='softmax', name='dense_' + str(train_label.shape[1]))(d1)
-
+    
     if forTesting:
         model = keras.Model(inputs=inputs, outputs=d1)
     else:
+        output = Dense(train_label.shape[1], activation='softmax', name='dense_' + str(train_label.shape[1]))(d1)
         model = keras.Model(inputs=inputs, outputs=output)
     return model
