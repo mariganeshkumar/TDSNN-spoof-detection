@@ -14,7 +14,7 @@ function a =extract_lfcc_bulk(WavList,dirName,featName1,featID0,filterCount1)
 %clc; clear all; close all;
 t = cputime
 % add required libraries to the path
-addpath(genpath('/others/saranya/IS2019_Spoofing_xvector/ASVspoof_2019_baseline_CM_v1'));
+addpath(genpath('../../library/ASVspoof_2019_baseline_CM_v1'));
 addpath(genpath('utility'));
 addpath(genpath('bosaris_toolkit'));
 

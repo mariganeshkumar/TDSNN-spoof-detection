@@ -45,6 +45,8 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.utils.generic_utils import get_custom_objects
 from keras.optimizers import Adam
 from keras.metrics import top_k_categorical_accuracy
+from keras_self_attention import SeqWeightedAttention
+
 
 import scipy.io as sio
 
@@ -177,7 +179,7 @@ trainFileNames=[x for x in trainLines]
 
 tvFN_ID=open(trainValidationList,'r');
 trianValLines=tvFN_ID.read().split("\n")[:-1]
-trianValFileNames=[y for y in trianValLines]
+trianValFileNames=[y.split(" ")[0] for y in trianValLines]
 
 dFN_ID=open(devList,'r');
 devLines=dFN_ID.read().split("\n")[:-1]
@@ -195,16 +197,12 @@ if test_only == 0 :
 	for i in tqdm(range(trianValFileCount)):
 		curFile=np.genfromtxt(trianValFileNames[i],skip_header=1,delimiter=' ',dtype='float')
 		trianValData.append(curFile)
-		flag=str(trianValFileNames[i].split('/')[-2])
-		if "spoofed" in flag: ## 761 to 1710 spoofed
-			tmp=str(trianValFileNames[i])+str(" spoofed ")+str(flag)
-	#		print(tmp)
+		flag=str(trianValLines[i].split(' ')[-1])
+		if "spoof" in flag: ## 761 to 1710 spoofed
 			trianValLabel.append(0)
 		else: ### 1 to 760 is bonafide
-			tmp=str(trianValFileNames[i])+str(" bonafide ")+str(flag)
-	#		print(tmp)
 			trianValLabel.append(1)
-
+	print(sum(trianValLabel))
 	trainData=[]
 	trainLabel=[]
 	trainFileCount=len(trainFileNames);
@@ -250,8 +248,10 @@ if test_only == 0 :
 	numFeats=trainData[0].shape[1]
 
 
-
+	
 	model = get_x_vector_model(batchtrianValData, hiddenLayerConfig, train_label=batchtrianValLabel, forTesting=False)
+	
+
 	adam_opt = Adam(lr=0.001, clipvalue=1)
 	#model.compile(loss=losses.categorical_crossentropy, optimizer=adam_opt,
 	model.compile(loss="focal_loss", optimizer=adam_opt,
